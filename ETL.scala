@@ -133,8 +133,8 @@ object etl extends App{
   println(ProcessingAndLoadingApplication.uniqueWords)
   ProcessingAndLoadingApplication.countWords
   ProcessingAndLoadingApplication.updateDB
-  /*println(ETLProcessApplication.files)
+  println(ETLProcessApplication.files)
   println(ETLProcessApplication.fileContent)
   println(ETLProcessApplication.filesInCapital)
   ETLProcessApplication.updateDB
-*/}
+}
