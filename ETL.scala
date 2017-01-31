@@ -8,18 +8,23 @@
   */
 
 import java.io._
+
 import scala.io._
 abstract class Database {
   def databaseSource : String
-  //override def toString: String = databaseSource
+  def databaseSink : String
 }
 
 abstract class Application{
-  val database : String
+  def fileSource : Database
+  def fileSink : Database
 }
 
 object ETLProcessDatabase extends Database{
-  val databaseSource = "C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\src\\RegExp.scala"
+ val databaseSource = "C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\src\\"
+  val databaseSink = "C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\OutputFolder\\"
+  val file = "RegularExp.scala"
+
   def getFiles(dir: String, extensions: List[String]): List[File] = {
     val directory = new File(dir)
     if (directory.exists && directory.isDirectory) {
@@ -49,24 +54,30 @@ object ETLProcessDatabase extends Database{
     lines
   }
 
+  def storeInDatabase(content : Any) = {
+    val writer = new PrintWriter(new File(databaseSink+file))
+    writer.write(content.toString())
+    writer.close()
+  }
+
 }
 
 object ETLProcessApplication extends Application{
-  val database = "C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\src"
-  val file = new File("C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\src\\RegExp.scala")
-  val files = ETLProcessDatabase.getFiles(database, List("scala"))
-  for (file <- files) println(file)
-  ETLProcessDatabase.readFiles(files)
-  val lines = ETLProcessDatabase.capitalizeFile(files)
-  println(lines)
-  val writer = new PrintWriter(new File("C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\src\\write.scala"))
-  writer.write(lines)
-  writer.close()
-  Source.fromFile("C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\src\\Write.scala").foreach { x => print(x) }
+ val fileSource = ETLProcessDatabase
+  val fileSink = ETLProcessDatabase
+  val files = ETLProcessDatabase.getFiles(fileSource.databaseSource, List("scala"))
+  val fileContent = ETLProcessDatabase.readFiles(files)
+  val filesInCapital = ETLProcessDatabase.capitalizeFile(files)
+  def updateDB = {
+    ETLProcessDatabase.storeInDatabase(files.toString + fileContent.toString + filesInCapital.toString)
+  }
 }
-object ProcessingAndLoadingDatabase extends Database{
 
-  val databaseSource = "C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\src\\RegExp.scala"
+object ProcessingAndLoadingDatabase extends Database{
+  val databaseSource = "C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\src\\"
+  val databaseSink = "C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\OutputFolder\\"
+  val file = "RegularExp.scala"
+
   def processWords(file: String) : scala.collection.mutable.Map[String,Int] = {
     val map = scala.collection.mutable.Map[String,Int]()
     val src = Source.fromFile(file)
@@ -85,25 +96,45 @@ object ProcessingAndLoadingDatabase extends Database{
     map
   }
 
-  def printUniqueWords(file : String) = {
+  def fetchUniqueWords(file : String) = {
     val map = processWords(file)
-    map.filter(_._2 == 1).map(_._1).foreach(x => println(x))
+    val list = map.filter(_._2 == 1).map(_._1)
+    list
   }
 
-  def wordCount(file : String) = {
+ def wordCount(file : String) = {
     val map = processWords(file)
-    map.foreach(x => println(s"${x._1} : ${x._2}"))
+     val wordCountList = for{
+                            item <- map
+                            string = item._1 +":"+ item._2
+                        }yield string
+   println(wordCountList)
+    wordCountList
+  }
+
+  def storeInDatabase(content : Any) = {
+    val writer = new PrintWriter(new File(databaseSink+file))
+    writer.write(content.toString())
+    writer.close()
   }
 }
 
-
 object ProcessingAndLoadingApplication extends Application{
-  val database = "C:\\Users\\Neha Bhardwaj\\IdeaProjects\\Assign2\\src\\RegExp.scala"
-  ProcessingAndLoadingDatabase.printUniqueWords(database)
-  ProcessingAndLoadingDatabase.wordCount(database)
+  val fileSource = ProcessingAndLoadingDatabase
+  val fileSink = ProcessingAndLoadingDatabase
+  val uniqueWords = ProcessingAndLoadingDatabase.fetchUniqueWords(fileSource.databaseSource+"RegularExp.scala")
+  val countWords = ProcessingAndLoadingDatabase.wordCount(fileSource.databaseSource+"RegularExp.scala")
+  def updateDB = {
+    ProcessingAndLoadingDatabase.storeInDatabase(uniqueWords.toString + countWords.toString)
+  }
 }
 
 object etl extends App{
-  ProcessingAndLoadingApplication
-  ETLProcessApplication
-}
+  println(ProcessingAndLoadingApplication.uniqueWords)
+  ProcessingAndLoadingApplication.countWords
+  ProcessingAndLoadingApplication.updateDB
+  /*println(ETLProcessApplication.files)
+  println(ETLProcessApplication.fileContent)
+  println(ETLProcessApplication.filesInCapital)
+  ETLProcessApplication.updateDB
+*/}
